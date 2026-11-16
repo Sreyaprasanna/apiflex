@@ -21,4 +21,9 @@ class ApiTable extends Model
     {
         return $this->hasMany(ApiField::class);
     }
+
+    public function records()
+    {
+        return $this->hasMany(MockRecord::class);
+    }
 }

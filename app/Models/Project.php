@@ -11,8 +11,9 @@ class Project extends Model
         'name',
         'database_name',
         'description',
+        'api_key',
+        'api_key_hash',
     ];
-
 
     public function tables()
     {
@@ -23,6 +24,4 @@ class Project extends Model
     {
         return $this->database_name;
     }
-
 }
-

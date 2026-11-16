@@ -10,6 +10,7 @@ use App\Models\ApiField;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 
+
 class ProjectController extends Controller
 {
     /**
@@ -20,6 +21,16 @@ class ProjectController extends Controller
         $projects = Project::withCount('tables')->latest()->get();
 
         return view('dashboard', compact('projects'));
+    }
+
+    /**
+     * Web: list all projects (dedicated Projects page)
+     */
+    public function indexWeb()
+    {
+        $projects = Project::withCount('tables')->latest()->get();
+
+        return view('projects.index', compact('projects'));
     }
 
     /**
@@ -37,27 +48,42 @@ class ProjectController extends Controller
     /**
      * Store a new project (handles both Web form and API POST)
      */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'database_name' => 'required|string|alpha_dash|unique:projects,database_name',
-            'description' => 'nullable|string',
 
-        ]);
 
-        $project = Project::create($validated);
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'database_name' => 'required|string|alpha_dash|unique:projects,database_name',
+        'description' => 'nullable|string',
+    ]);
 
-        if ($request->wantsJson() || $request->is('api/*')) {
-            return response()->json([
-                'message' => 'Project created successfully',
-                'data' => $project
-            ], 201);
-        }
+    // Generate API secret key
+    $secretKey = 'sk_live_' . Str::random(48);
 
-        return redirect()->route('projects.show', $project->database_name)
-            ->with('success', "Project '{$project->name}' created successfully!");
+    // Store project and key
+    $project = Project::create([
+        ...$validated,
+        'api_key' => $secretKey,
+        'api_key_hash' => hash('sha256', $secretKey),
+    ]);
+
+    // API request
+    if ($request->wantsJson() || $request->is('api/*')) {
+        return response()->json([
+            'message' => 'Project created successfully',
+            'project' => $project,
+            'secret_key' => $secretKey,
+        ], 201);
     }
+
+    // Web dashboard request
+    return redirect()
+        ->route('projects.show', $project->database_name)
+        ->with('success', "Project '{$project->name}' created successfully!")
+        ->with('secret_key', $secretKey);
+}
+
 
     /**
      * Display a single project:
@@ -91,29 +117,29 @@ class ProjectController extends Controller
     /**
      * Update project
      */
-    public function update(Request $request, $id)
-    {
-        $project = Project::where('id', $id)
-            ->orWhere('database_name', $id)
-            ->first();
+    // public function update(Request $request, $id)
+    // {
+    //     $project = Project::where('id', $id)
+    //         ->orWhere('database_name', $id)
+    //         ->first();
 
-        if (!$project) {
-            return response()->json(['message' => 'Project not found'], 404);
-        }
+    //     if (!$project) {
+    //         return response()->json(['message' => 'Project not found'], 404);
+    //     }
 
-        $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'database_name' => 'sometimes|required|string|alpha_dash|unique:projects,database_name,' . $project->id,
-            'description' => 'nullable|string',
-        ]);
+    //     $validated = $request->validate([
+    //         'name' => 'sometimes|required|string|max:255',
+    //         'database_name' => 'sometimes|required|string|alpha_dash|unique:projects,database_name,' . $project->id,
+    //         'description' => 'nullable|string',
+    //     ]);
 
-        $project->update($validated);
+    //     $project->update($validated);
 
-        return response()->json([
-            'message' => 'Project updated successfully',
-            'data' => $project
-        ]);
-    }
+    //     return response()->json([
+    //         'message' => 'Project updated successfully',
+    //         'data' => $project
+    //     ]);
+    // }
 
     /**
      * Delete project (handles both Web button and API DELETE)
@@ -147,103 +173,13 @@ class ProjectController extends Controller
     /**
      * Web & API: Store a new table with fields under a project
      */
-    public function storeTable(Request $request, $projectIdentifier)
-    {
-        $project = Project::where('database_name', $projectIdentifier)
-            ->orWhere('id', $projectIdentifier)
-            ->firstOrFail();
-
-        $request->validate([
-            'name' => 'required|string|max:100',
-            'fields' => 'nullable|array',
-            'fields.*.name' => 'nullable|string|max:100',
-            'fields.*.type' => 'nullable|string|in:string,number,boolean,email,date,text',
-            'fields.*.required' => 'nullable',
-        ]);
-
-        $tableName = trim($request->name);
-        $slug = Str::slug($tableName, '_');
-
-        $exists = $project->tables()->where('slug', $slug)->exists();
-        if ($exists) {
-            return back()->withInput()->withErrors(['name' => 'A table with this name already exists in this project.']);
-        }
-
-        $table = DB::transaction(function () use ($project, $tableName, $slug, $request) {
-            $table = $project->tables()->create([
-                'name' => $tableName,
-                'slug' => $slug,
-            ]);
-
-            if ($request->has('fields') && is_array($request->fields)) {
-                foreach ($request->fields as $fieldData) {
-                    $fieldName = trim($fieldData['name'] ?? '');
-                    if ($fieldName === '') {
-                        continue;
-                    }
-
-                    $fieldType = $fieldData['type'] ?? 'string';
-                    $isRequired = !empty($fieldData['required']);
-
-                    $table->fields()->create([
-                        'name' => Str::snake($fieldName),
-                        'type' => $fieldType,
-                        'required' => $isRequired,
-                    ]);
-                }
-            }
-
-            return $table;
-        });
-
-        if ($request->wantsJson() || $request->is('api/*')) {
-            return response()->json([
-                'message' => 'Table created successfully',
-                'data' => $table->load('fields')
-            ], 201);
-        }
-
-        return redirect()->route('projects.tables.show', [
-            'project' => $project->database_name,
-            'table' => $slug,
-        ])->with('success', "Table '{$tableName}' and fields created successfully!");
-    }
 
     /**
      * Web: Show a specific table and its generated routes
      */
-    public function showTable($projectIdentifier, $tableIdentifier)
-    {
-        $project = Project::where('database_name', $projectIdentifier)
-            ->orWhere('id', $projectIdentifier)
-            ->firstOrFail();
-
-        $table = ApiTable::with('fields')
-            ->where('project_id', $project->id)
-            ->where(function ($query) use ($tableIdentifier) {
-                $query->where('slug', $tableIdentifier)
-                    ->orWhere('name', $tableIdentifier)
-                    ->orWhere('id', $tableIdentifier);
-            })
-            ->firstOrFail();
-
-        return view('projects.table', compact('project', 'table'));
-    }
 
     /**
      * Web: Delete a table
      */
-    public function destroyTable($projectIdentifier, $tableId)
-    {
-        $project = Project::where('database_name', $projectIdentifier)
-            ->orWhere('id', $projectIdentifier)
-            ->firstOrFail();
 
-        $table = $project->tables()->findOrFail($tableId);
-        $name = $table->name;
-        $table->delete();
-
-        return redirect()->route('projects.show', $project->database_name)
-            ->with('success', "Table '{$name}' was deleted.");
-    }
 }
