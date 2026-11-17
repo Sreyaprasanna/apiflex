@@ -16,6 +16,7 @@ Route::get('/', function () {
 
 // Dashboard & Projects
 Route::get('/dashboard', [ProjectController::class, 'dashboard'])->name('dashboard');
+// Route::get('/dashboard', [ApiTableController::class, 'showTable'])->name('dashboard');
 Route::get('/projects', [ProjectController::class, 'indexWeb'])->name('projects.index');
 Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
 Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show');

@@ -115,7 +115,7 @@
         $totalUsersCount = \App\Models\User::count();
     @endphp
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-6">
         {{-- Card 1: TOTAL USERS --}}
         <div class="bg-white dark:bg-[#0D1320] border border-slate-200 dark:border-white/[0.08] border-t-2 border-t-emerald-500 dark:border-t-emerald-400 rounded-2xl p-5 shadow-sm dark:shadow-xs flex flex-col justify-between">
             <div>
@@ -159,7 +159,7 @@
         </div>
 
         {{-- Card 3: API REQUESTS --}}
-        <div class="bg-white dark:bg-[#0D1320] border border-slate-200 dark:border-white/[0.08] border-t-2 border-t-emerald-500 dark:border-t-emerald-400 rounded-2xl p-5 shadow-sm dark:shadow-xs flex flex-col justify-between">
+        <!-- <div class="bg-white dark:bg-[#0D1320] border border-slate-200 dark:border-white/[0.08] border-t-2 border-t-emerald-500 dark:border-t-emerald-400 rounded-2xl p-5 shadow-sm dark:shadow-xs flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between mb-3">
                     <span class="text-[11px] font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">API Requests</span>
@@ -177,7 +177,7 @@
                 </div>
             </div>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-3">Mock endpoint calls served</p>
-        </div>
+        </div> -->
 
         {{-- Card 4: ACTIVE TABLES --}}
         <div class="bg-white dark:bg-[#0D1320] border border-slate-200 dark:border-white/[0.08] border-t-2 border-t-amber-500 dark:border-t-amber-400 rounded-2xl p-5 shadow-sm dark:shadow-xs flex flex-col justify-between">
@@ -191,7 +191,7 @@
                     </div>
                 </div>
                 <div class="flex items-baseline justify-between">
-                    <span class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{{ max($totalTablesCount, 35) }}</span>
+                    <span class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{{ max($totalTablesCount, 1) }}</span>
                     <span class="text-[11px] font-bold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/60 border border-violet-200 dark:border-violet-800/50 px-2.5 py-0.5 rounded-full">
                         Stable
                     </span>
